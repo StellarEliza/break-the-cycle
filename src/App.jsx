@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
+import { supabase } from "./supabase.js";
 
 // ─── Google Fonts ───────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -231,39 +232,22 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
-// ─── Brand Emblem ─────────────────────────────────────────────────────────────
-const SHARDS = [
-  [60,9,13,6,0],[87,17,11,5,42],[105,43,6,12,80],[103,73,7,11,108],
-  [85,97,12,5,135],[58,109,13,6,178],[31,99,11,5,-140],[13,75,6,12,-105],
-  [11,45,6,11,-75],[27,19,12,5,-42],
-];
-const Emblem = ({ size = 36, variant = "color" }) => {
-  const bg = variant === "dark" ? "#1e3f45" : "#3D6B72";
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="60" cy="60" r="58" fill={bg} />
-      {SHARDS.map(function(s, i) {
-        var cx=s[0],cy=s[1],w=s[2],h=s[3],r=s[4];
-        return <rect key={i} x={cx-w/2} y={cy-h/2} width={w} height={h} rx="1.5"
-          fill="none" stroke="rgba(255,255,255,0.68)" strokeWidth="1.8"
-          transform={"rotate("+r+" "+cx+" "+cy+")"} opacity="0.78" />;
-      })}
-      <line x1="90" y1="24" x2="101" y2="13" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="26" y1="91" x2="15"  y2="103" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="93" y1="83" x2="106" y2="95"  stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="14" y1="43" x2="5"   y2="33"  stroke="rgba(255,255,255,0.4)"  strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="60" y1="90" x2="60" y2="54" stroke="#1e3f45" strokeWidth="3.5" strokeLinecap="round"/>
-      <path d="M60 80 Q46 71 41 58 Q52 61 60 74Z" fill="#1e3f45" opacity="0.9"/>
-      <path d="M60 76 Q74 69 78 56 Q68 60 60 71Z" fill="#E8A89F" opacity="0.82"/>
-      <path d="M60 55 C56 46 56 35 60 27 C64 35 64 46 60 55Z" fill="#D4736A"/>
-      <path d="M60 53 C52 47 44 40 41 31 C49 33 57 42 60 52Z" fill="#D4736A" opacity="0.88"/>
-      <path d="M60 53 C68 47 76 40 79 31 C71 33 63 42 60 52Z" fill="#D4736A" opacity="0.88"/>
-      <path d="M60 50 C51 46 40 44 35 37 C42 35 54 44 60 50Z" fill="#C06060" opacity="0.72"/>
-      <path d="M60 50 C69 46 80 44 85 37 C78 35 66 44 60 50Z" fill="#C06060" opacity="0.72"/>
-      <ellipse cx="60" cy="29" rx="2.5" ry="4.5" fill="#1e3f45" opacity="0.65"/>
+// ─── Brand Logo Mark ──────────────────────────────────────────────────────────
+const Emblem = ({ size = 36 }) => (
+  <div style={{
+    width: size, height: size, borderRadius: "50%",
+    background: "var(--teal)", flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center",
+  }}>
+    <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 22 22" fill="none">
+      <path d="M11 3C8 3 5 5.5 5 9c0 4.5 6 10 6 10s6-5.5 6-10c0-3.5-3-6-6-6z"
+        fill="white" opacity="0.95"/>
+      <path d="M11 3C8 3 5 5.5 5 9c0 4.5 6 10 6 10s6-5.5 6-10c0-3.5-3-6-6-6z"
+        fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
+      <circle cx="11" cy="9" r="2.5" fill="var(--teal)"/>
     </svg>
-  );
-};
+  </div>
+);
 
 const Nav = ({ page, setPage }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -612,38 +596,89 @@ const LandingPage = ({ setPage }) => {
 };
 
 // ─── AI Chat Page ─────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are the Break The Cycle AI Support Assistant — a trauma-informed, compassionate, non-judgmental conversational guide helping users understand whether they may be experiencing abuse.
+const SYSTEM_PROMPT = `You are the Break The Cycle AI Support Assistant. You are a warm, deeply empathetic, trauma-informed conversational companion. Your entire purpose is to help people feel heard, understood, and gently supported as they explore whether they may be experiencing abuse of any kind.
 
-CORE RULES:
-- Be warm, empathetic, and gentle at all times
-- Ask ONE thoughtful question at a time — never multiple questions at once
-- Never be clinical, cold, or bureaucratic
-- Never tell the user what they are experiencing as fact — frame everything as possibility ("it sounds like...", "this could be consistent with...", "some people in similar situations...")
-- NEVER present yourself as a therapist, counselor, doctor, or emergency service
-- NEVER make legal claims or diagnoses
-- Validate feelings before offering any insight
-- If the user seems in immediate danger, gently but clearly encourage them to contact emergency services
-- Be curious, reflective, and patient
-- After 4–6 exchanges, offer a gentle summary of what you've discussed and any patterns you notice
-- Always end messages with an open, gentle question or offer to continue
+YOU ARE NOT: a therapist, doctor, counselor, lawyer, or emergency service. You never claim to be.
+YOU ARE: a compassionate, intelligent, patient presence — like a wise, caring friend who truly listens.
 
-ABUSE TYPES TO RECOGNISE:
-Domestic violence, verbal abuse, psychological/emotional abuse, physical abuse, sexual abuse, economic/financial abuse, social isolation, spiritual abuse, cyber abuse/digital abuse. Also: LGBTQ+-specific forms including family-based abuse, institutional discrimination.
+═══ HOW YOU SPEAK ═══
 
-CONVERSATION STYLE:
-- Start by welcoming the user and asking what brought them here today
-- Use reflective listening ("What I'm hearing is...", "It sounds like...")
-- Normalise their experience without minimising it
-- When appropriate, gently name patterns: "What you're describing sounds like it could be a form of emotional control — is that something you'd like to explore?"
-- After meaningful sharing, provide a probability-based insight: "Based on what you've shared, there are patterns here that are sometimes consistent with [type] — with that said, every situation is unique and only you can know your full experience."
-- Always end with resources or next steps when appropriate
+Your tone is always:
+- Warm and human — never robotic, clinical, or formal
+- Gentle and unhurried — you never rush the person
+- Deeply validating — you always acknowledge feelings BEFORE offering any insight
+- Curious and reflective — you are genuinely interested in their experience
+- Calm and grounding — your presence itself should feel safe
 
-IMPORTANT ETHICAL NOTES:
-- Always include a disclaimer if giving insights: "This is not a diagnosis — only a supportive observation."
-- Recommend human support when risk seems elevated
-- Do not store or repeat any personally identifying information
+Your responses should feel like a real conversation, not a form or a checklist. Write in flowing, natural paragraphs. Use "I" and "you" naturally. Be personal.
 
-Begin the conversation with a warm, gentle opening.`;
+NEVER write bullet-pointed responses to the user. NEVER use headers or lists in your replies. Write like a caring human being.
+
+Response length: Medium. Not too short (that feels dismissive), not too long (that feels overwhelming). 3-5 sentences is often perfect for early exchanges. Grow slightly longer as trust deepens.
+
+═══ CONVERSATION FLOW ═══
+
+OPENING (first message):
+Welcome them with genuine warmth. Acknowledge that reaching out takes courage. Let them know they are in a safe, non-judgmental space. Ask one soft, open question like: "What brought you here today?" or "Is there something on your mind you'd like to talk through?" — nothing more.
+
+EARLY EXCHANGES (messages 2-4):
+Your only job is to listen and reflect. Use their exact words back to them. Show you heard them. Validate before anything else. Ask ONE gentle follow-up question that goes a little deeper. Examples:
+- "That sounds really hard. How long have you been feeling this way?"
+- "When you say [their word], can you tell me a little more about what that looks like for you?"
+- "It sounds like that situation left you feeling [emotion]. Does that feel right?"
+
+MIDDLE EXCHANGES (messages 5-8):
+Gently begin to reflect patterns you're noticing — always framed as observation, never diagnosis:
+- "I notice you've mentioned feeling [X] a few times — that feels important."
+- "What you're describing — [summarise briefly] — sometimes shows up in situations where someone is experiencing [type of dynamic]. I'm not saying that's definitely what's happening, but I wonder how that lands for you?"
+Continue asking one question at a time.
+
+DEEPER EXCHANGES (messages 8+):
+If enough has been shared, offer a compassionate summary:
+- What you've heard them express
+- Any patterns that stand out (framed as possibilities, never certainties)
+- Gentle validation that their feelings are real and valid regardless of labels
+- One or two possible next steps they might consider — resources, speaking to someone, or simply giving themselves more time
+
+═══ LANGUAGE RULES ═══
+
+ALWAYS frame insights as possibility:
+✓ "It sounds like..." / "I'm wondering if..." / "What you're describing could be consistent with..."
+✓ "Some people in similar situations have found that..."
+✓ "I'm not here to tell you what's happening — only you know that — but I do notice..."
+✗ NEVER say "you are being abused" or "this is definitely abuse" or "your partner is an abuser"
+
+ALWAYS validate first:
+✓ "That sounds incredibly painful." / "It makes complete sense that you'd feel confused." / "What you're carrying sounds really heavy."
+✗ NEVER jump straight to analysis without acknowledging their feelings first
+
+ALWAYS end with one open, gentle question or a soft offer to continue. Never end abruptly.
+
+═══ ABUSE TYPES YOU UNDERSTAND ═══
+
+You are knowledgeable about: domestic violence, emotional/psychological abuse, verbal abuse, physical abuse, sexual abuse, economic/financial abuse, social isolation and control, spiritual abuse, digital/cyber abuse, coercive control, LGBTQ+-specific abuse (including forced outing, family rejection, identity-based manipulation, institutional discrimination).
+
+You understand that abuse: exists on a spectrum, often starts subtly, can happen to anyone regardless of gender/age/background, is rarely obvious from the inside, and that victims often blame themselves or minimise their experience.
+
+═══ SAFETY ═══
+
+If someone describes immediate physical danger, threats to their life, or a crisis situation:
+Respond with calm urgency. Acknowledge what they've shared with care. Clearly but gently encourage them to contact emergency services (112 in Europe, 911 in the US) or a local crisis line. Do not panic or alarm them further. Stay warm.
+
+═══ WHAT YOU NEVER DO ═══
+- Never give lists or bullet points in responses
+- Never use headers in responses  
+- Never repeat the same phrase twice in a conversation
+- Never be preachy or lecture
+- Never minimise ("at least he doesn't hit you")
+- Never victim-blame ("why didn't you leave?")
+- Never express shock or judgment at anything shared
+- Never ask more than one question at a time
+- Never use the word "boundaries" as a cliché filler
+- Never say "I understand" as an empty phrase — show that you understand through your response
+
+═══ OPENING MESSAGE INSTRUCTION ═══
+Your very first message should be 3-4 sentences. Warm, welcoming, safe. End with one gentle open question. Nothing more.`;
 
 const ChatPage = ({ user, onSaveSession }) => {
   const [messages, setMessages] = useState([]);
@@ -1494,43 +1529,56 @@ const AboutPage = ({ setPage }) => {
   );
 };
 
-// ─── Storage helpers (localStorage) ──────────────────────────────────────────
+// ─── Supabase DB helpers ──────────────────────────────────────────
 const DB = {
-  async getUsers() {
-    try { return JSON.parse(localStorage.getItem('btc:users') || '{}'); } catch { return {}; }
-  },
-  async saveUsers(users) {
-    try { localStorage.setItem('btc:users', JSON.stringify(users)); } catch {}
-  },
   async getSession() {
-    try { const r = localStorage.getItem('btc:session'); return r ? JSON.parse(r) : null; } catch { return null; }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      return profile ? { id: profile.id, name: profile.name, email: session.user.email, role: profile.role, avatar: profile.name?.[0]?.toUpperCase() || '?' } : null;
+    } catch { return null; }
   },
-  async saveSession(user) {
-    try { localStorage.setItem('btc:session', JSON.stringify(user)); } catch {}
+  async signIn(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+    return { id: data.user.id, name: profile?.name || email.split('@')[0], email, role: profile?.role || 'user', avatar: (profile?.name || email)[0].toUpperCase() };
   },
-  async clearSession() {
-    try { localStorage.removeItem('btc:session'); } catch {}
+  async signUp(name, email, password, role) {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    await supabase.from('profiles').insert({ id: data.user.id, name, role });
+    return { id: data.user.id, name, email, role, avatar: name[0].toUpperCase() };
+  },
+  async signOut() {
+    await supabase.auth.signOut();
   },
   async getChatSessions(userId) {
-    try { return JSON.parse(localStorage.getItem('btc:chats:' + userId) || '[]'); } catch { return []; }
+    try {
+      const { data } = await supabase.from('chat_sessions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20);
+      return (data || []).map(s => ({ ...s, date: new Date(s.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) }));
+    } catch { return []; }
   },
   async saveChatSession(userId, session) {
     try {
-      const sessions = await DB.getChatSessions(userId);
-      const idx = sessions.findIndex(s => s.id === session.id);
-      if (idx >= 0) sessions[idx] = session; else sessions.unshift(session);
-      localStorage.setItem('btc:chats:' + userId, JSON.stringify(sessions.slice(0, 20)));
+      await supabase.from('chat_sessions').upsert({ id: session.id, user_id: userId, preview: session.preview, risk: session.risk || 'low', tags: session.tags || [], message_count: session.messageCount || 0, has_summary: session.hasSummary || false });
     } catch {}
   },
   async getVolApp(userId) {
-    try { const r = localStorage.getItem('btc:volapp:' + userId); return r ? JSON.parse(r) : null; } catch { return null; }
+    try {
+      const { data } = await supabase.from('volunteer_applications').select('*').eq('user_id', userId).single();
+      return data;
+    } catch { return null; }
   },
   async saveVolApp(userId, app) {
-    try { localStorage.setItem('btc:volapp:' + userId, JSON.stringify(app)); } catch {}
+    try {
+      await supabase.from('volunteer_applications').insert({ user_id: userId, ...app });
+    } catch {}
   },
 };
 
-// ─── Auth Modal ───────────────────────────────────────────────────────────────
+
 const AuthModal = ({ onClose, onAuth }) => {
   const [mode, setMode] = useState("signin");
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", role: "user" });
@@ -1558,35 +1606,30 @@ const AuthModal = ({ onClose, onAuth }) => {
   const handleSignIn = async () => {
     if (!validateSignIn()) return;
     setLoading(true);
-    const users = await DB.getUsers();
-    const key = form.email.toLowerCase();
-    const u = users[key];
-    if (!u) { setErrors({ email: "No account found with this email" }); setLoading(false); return; }
-    if (u.password !== form.password) { setErrors({ password: "Incorrect password" }); setLoading(false); return; }
-    const userData = { id: u.id, name: u.name, email: u.email, role: u.role, avatar: u.name[0].toUpperCase() };
-    await DB.saveSession(userData);
-    onAuth(userData);
-    setLoading(false); onClose();
+    try {
+      const userData = await DB.signIn(form.email, form.password);
+      onAuth(userData);
+      onClose();
+    } catch(e) {
+      setErrors({ password: "Email or password incorrect" });
+    }
+    setLoading(false);
   };
 
   const handleSignUpNext = () => { if (validateSignUp()) setStep(2); };
 
   const handleSignUpSubmit = async () => {
     setLoading(true);
-    const users = await DB.getUsers();
-    const key = form.email.toLowerCase();
-    if (users[key]) { setErrors({ email: "An account with this email already exists" }); setStep(1); setLoading(false); return; }
-    const newUser = {
-      id: 'u_' + Date.now(),
-      name: form.name, email: form.email, password: form.password,
-      role: form.role, createdAt: new Date().toISOString(),
-    };
-    users[key] = newUser;
-    await DB.saveUsers(users);
-    const userData = { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, avatar: newUser.name[0].toUpperCase() };
-    await DB.saveSession(userData);
-    onAuth(userData);
-    setLoading(false); onClose();
+    try {
+      const userData = await DB.signUp(form.name, form.email, form.password, form.role);
+      onAuth(userData);
+      onClose();
+    } catch(e) {
+      if (e.message?.includes('already')) setErrors({ email: "An account with this email already exists" });
+      else setErrors({ email: e.message || "Something went wrong, please try again" });
+      setStep(1);
+    }
+    setLoading(false);
   };
 
   const Field = ({ label, type = "text", placeholder, error, val, onChange }) => (
@@ -2210,7 +2253,7 @@ export default function App() {
   const handleAuth = (userData) => { setUser(userData); setPage("dashboard"); };
 
   const handleSignOut = async () => {
-    await DB.clearSession();
+    await DB.signOut();
     setUser(null); setPage("home");
   };
 
